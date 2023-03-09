@@ -1,5 +1,4 @@
-// import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, FlatList, Pressable, StyleSheet, Text, TextInput, View, Image } from 'react-native';
 import axios from 'axios';
 export default function App() {
@@ -8,11 +7,43 @@ export default function App() {
   function onChangeTextHandeler(enteredText) {
     setText(enteredText)
   }
-  function enterGoal() {
-    setGoal(currentGoal => [...currentGoal, { text, id: Math.random().toString() }])
+  //remember you have to use your real ip address not the other one like 127.0.0.1 one 
+
+
+  useEffect(() => {
+    getData()
+  }, [])
+
+  const submitData = async () => {
+
+    try {
+      const response = await axios.post("http://192.168.1.32:3000/data", {
+        todo: text
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+    setText("");
+  };
+  //now create to get data from mongodb...
+  const getData = async () => {
+    try {
+      const response = await axios.get("http://192.168.1.32:3000/data")
+      setGoal(response.data)
+    } catch (error) {
+      console.log(error)
+    }
   }
-  function deleteGoal(id) {
-    setGoal(currentGoal => currentGoal.filter(goal => goal.id !== id))
+  const deleteGoal = async (id) => {
+    try{
+      const response = await axios.post("http://192.168.1.32:3000/delete", {
+        deleteId: id
+      });
+      console.log(response)
+    }catch(err){
+      console.log(err)
+    }
   }
   return (
     <View style={styles.container}>
@@ -20,9 +51,9 @@ export default function App() {
         <Image style={styles.image} source={require('../awesomeproject/assets/aim.png')} />
       </View>
       <View style={styles.upper}>
-        <TextInput style={styles.textinput} placeholder='enter your goal...'
+        <TextInput value={text} style={styles.textinput} placeholder='enter your goal...'
           onChangeText={onChangeTextHandeler} />
-        <Button color="#FF8B13" title="addGoal" onPress={enterGoal} />
+        <Button color="#FF8B13" title="addGoal" onPress={() => { submitData(); getData() }} />
       </View>
       <View style={styles.lower}>
         <FlatList
@@ -30,9 +61,9 @@ export default function App() {
           contentContainerStyle={styles.innercontainer}
           renderItem={(itemData) => {
             return (
-              <Pressable onPress={() => { deleteGoal(itemData.item.id) }}>
-                <View style={styles.items} key={itemData.item.id}>
-                  <Text style={styles.text}>{itemData.item.text}</Text>
+              <Pressable onPress={() => { deleteGoal(itemData.item._id) }}>
+                <View style={styles.items} key={itemData.item._id}>
+                  <Text style={styles.text}>{itemData.item.todos}</Text>
                 </View>
               </Pressable>
             )
